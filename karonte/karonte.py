@@ -1,11 +1,15 @@
+import os
 import json
 import sys
 import angr
 import logging
+from pathlib import Path
+
+from bf.bug_finder import BugFinder
+from bbf.border_binaries_finder import BorderBinariesFinder
 from bdg.binary_dependency_graph import BinaryDependencyGraph
 from bdg.cpfs import environment, semantic, file, socket, setter_getter
-from bbf.border_binaries_finder import BorderBinariesFinder
-from bf.bug_finder import BugFinder
+
 from loggers.file_logger import FileLogger
 from loggers.bar_logger import BarLogger
 from utils import *
@@ -28,12 +32,12 @@ class Karonte:
 
         self._border_bins = [str(x) for x in self._config['bin']] if 'bin' in self._config else []
 
-        self._fw_path = self._config['fw_path']
+        self._fw_path = Path(self._config['fw_path'])
 
-        out_dir = os.path.join(FW_TMP_DIR, os.path.basename(self._fw_path))
+        out_dir = Path(FW_TMP_DIR) / self._fw_path.name
 
-        if os.path.isfile(self._fw_path) and not os.path.isdir(out_dir):
-            owd = os.getcwd()
+        if self._fw_path.is_file() and not out_dir.exists():
+            owd = Path.cwd()
 
             log.info("Extracting firmware image. This may take a while...")
             self._fw_path = unpack_firmware(self._fw_path, FW_TMP_DIR)
@@ -42,8 +46,10 @@ class Karonte:
             # the extractor messes up the working directory. reset it
             os.chdir(owd)
 
-        elif not os.path.isdir(self._fw_path) and os.path.isdir(out_dir):
+        elif self._fw_path.is_dir():
+            pass
 
+        elif not self._fw_path.is_dir() and out_dir.exists():
             # when the image is already extracted before and the passed directory is not the extracted dir
             self._fw_path = out_dir
 
