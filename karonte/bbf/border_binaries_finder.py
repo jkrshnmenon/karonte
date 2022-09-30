@@ -18,7 +18,7 @@ from loggers import bar_logger
 from bbf.binary_finder import *
 from bbf.forward_backward_taint_tracker import ForwardBackWardTaintTracker
 from bbf.utils import *
-from config import *
+# from config import *
 from taint_analysis.utils import arg_reg_off, arg_reg_names, get_arity
 from bdg.utils import get_mem_string
 from bdg.cpfs import LIB_KEYWORD
@@ -589,8 +589,9 @@ class BorderBinariesFinder:
             self._collect_stats(bins)
             self._apply_parsing_score()
             self._border_binaries = BorderBinariesFinder._get_first_cluster(self._candidates)
+            log.info("Pickling stuff to %s" % pickle_file)
             self._pickle_it(pickle_file)
 
         self._end_time = time.time()
         log.info(f"The discovered border binaries are: {self._border_binaries}")
-        return self._border_binaries
+        return self._border_binaries, pickle_file
