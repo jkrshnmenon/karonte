@@ -31,8 +31,10 @@ class Karonte:
         self._pickle_parsers = self._config['pickle_parsers']
 
         self._border_bins = [str(x) for x in self._config['bin']] if 'bin' in self._config else []
+        log.debug("Border bins: %s" % str(self._border_bins))
 
         self._fw_path = Path(self._config['fw_path'])
+        log.info("Firmware path : %s" % self._fw_path)
 
         out_dir = Path(FW_TMP_DIR) / self._fw_path.name
 
@@ -47,9 +49,11 @@ class Karonte:
             os.chdir(owd)
 
         elif self._fw_path.is_dir():
+            log.info("Firmware is already extracted at %s" % self._fw_path)
             pass
 
         elif not self._fw_path.is_dir() and out_dir.exists():
+            log.info("Firmware is already extracted at %s" % out_dir)
             # when the image is already extracted before and the passed directory is not the extracted dir
             self._fw_path = out_dir
 
