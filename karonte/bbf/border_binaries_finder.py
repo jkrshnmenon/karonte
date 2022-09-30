@@ -576,9 +576,11 @@ class BorderBinariesFinder:
 
         self._start_time = time.time()
         if pickle_file and os.path.isfile(pickle_file):
+            log.info("Found pickle file %s" % pickle_file)
             with open(pickle_file, 'rb') as fp:
                 self._candidates, self._stats, self._multiplier = pickle.load(fp)
         else:
+            log.info("pickle file does not exist. Creating one now")
             if not pickle_file:
                 pickle_dir = DEFAULT_PICKLE_DIR
                 rel_pickle_name = self._fw_path.replace('/', '_').replace('.', '')
