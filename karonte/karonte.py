@@ -20,27 +20,35 @@ class Karonte:
         global log
         log = BarLogger("Karonte", "DEBUG")
         
-        self._config = json.load(open(config_path))
+        config = json.load(open(config_path))
         # remove empty keys from the config
-        self._config = dict((k, v) for k, v in self._config.items() if v)
+        self._config = {k: v for k, v in config.items() if len(v) > 0}
+
         self._pickle_parsers = self._config['pickle_parsers']
+
         self._border_bins = [str(x) for x in self._config['bin']] if 'bin' in self._config else []
 
         self._fw_path = self._config['fw_path']
+
         out_dir = os.path.join(FW_TMP_DIR, os.path.basename(self._fw_path))
+
         if os.path.isfile(self._fw_path) and not os.path.isdir(out_dir):
             owd = os.getcwd()
+
             log.info("Extracting firmware image. This may take a while...")
             self._fw_path = unpack_firmware(self._fw_path, FW_TMP_DIR)
             self._fw_path = out_dir
+
             # the extractor messes up the working directory. reset it
             os.chdir(owd)
-        # when the image is already extracted before and the passed directory is not the extracted dir
+
         elif not os.path.isdir(self._fw_path) and os.path.isdir(out_dir):
+
+            # when the image is already extracted before and the passed directory is not the extracted dir
             self._fw_path = out_dir
 
         if log_path is None:
-            if 'log_path' in self._config and self._config['log_path']:
+            if 'log_path' in self._config and len(self._config['log_path']) > 0:
                 log_path = self._config['log_path']
             else:
                 log_path = DEFAULT_LOG_PATH
@@ -83,9 +91,9 @@ class Karonte:
         bf = BugFinder(self._config, bdg, analyze_parents, analyze_children, logger_obj=log)
         bf.run(report_alert=self._klog.save_alert, report_stats=self._klog.save_stats if self._add_stats else None)
 
-        log.info("Discovering Bugs")
-        bf = BugFinder(self._config, bdg, analyze_parents, analyze_children, logger_obj=log)
-        bf.run(report_alert=self._klog.save_alert, report_stats=self._klog.save_stats if self._add_stats else None)
+        # log.info("Discovering Bugs")
+        # bf = BugFinder(self._config, bdg, analyze_parents, analyze_children, logger_obj=log)
+        # bf.run(report_alert=self._klog.save_alert, report_stats=self._klog.save_stats if self._add_stats else None)
 
         # Done.
         log.info(f"Finished, results in {self._klog.name}")
