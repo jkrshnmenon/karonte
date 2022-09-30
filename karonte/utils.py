@@ -1,4 +1,3 @@
-import os
 from random import randint
 
 from libraries.extractor.extractor import Extractor
