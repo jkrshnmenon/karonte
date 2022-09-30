@@ -23,8 +23,9 @@ class Karonte:
     def __init__(self, config_path, log_path=None):
         global log
         log = BarLogger("Karonte", "DEBUG")
+        self._config_path = config_path
         
-        config = json.load(open(config_path))
+        config = json.load(open(self._config_path))
         # remove empty keys from the config
         self._config = {k: v for k, v in config.items() if len(v) > 0}
 
@@ -81,7 +82,12 @@ class Karonte:
 
         log.info("Retrieving Border Binaries")
         if not self._border_bins:
-            self._border_bins = bbf.run(pickle_file=self._pickle_parsers)
+            log.info("Running BorderBinariesFinder")
+            self._border_bins, pickle_file = bbf.run(pickle_file=self._pickle_parsers)
+            log.info("Writing pickle file location to config file")
+            self._config['pickle_parser'] = pickle_file
+            with open(self._config_path, "w") as f:
+                json.dump(self._config, f, indent=2)
             if not self._border_bins:
                 log.error("No border binaries found, exiting...")
                 log.info(f"Finished, results in {self._klog.name}")
