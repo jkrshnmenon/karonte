@@ -29,21 +29,21 @@ class Karonte:
         # remove empty keys from the config
         self._config = {k: v for k, v in config.items() if len(v) > 0}
 
-        self._pickle_parsers = self._config['pickle_parsers']
+        self._pickle_parsers = DEFAULT_PICKLE_DIR / self._config['pickle_parsers'] if 'pickle_parsers' in self._config else None
 
         self._border_bins = [str(x) for x in self._config['bin']] if 'bin' in self._config else []
         log.debug("Border bins: %s" % str(self._border_bins))
 
-        self._fw_path = Path(self._config['fw_path'])
+        self._fw_path = PACKED_FW_DIR / self._config['fw_path']
         log.info("Firmware path : %s" % self._fw_path)
 
-        out_dir = Path(FW_TMP_DIR) / self._fw_path.name
+        out_dir = EXTRACED_FW_DIR / self._fw_path.name
 
         if self._fw_path.is_file() and not out_dir.exists():
             owd = Path.cwd()
 
             log.info("Extracting firmware image. This may take a while...")
-            self._fw_path = unpack_firmware(self._fw_path, FW_TMP_DIR)
+            self._fw_path = unpack_firmware(self._fw_path, EXTRACED_FW_DIR)
             self._fw_path = out_dir
 
             # the extractor messes up the working directory. reset it
@@ -57,7 +57,7 @@ class Karonte:
             log.info("Firmware is already extracted at %s" % out_dir)
             # when the image is already extracted before and the passed directory is not the extracted dir
             self._fw_path = out_dir
-
+        
         if log_path is None:
             if 'log_path' in self._config and len(self._config['log_path']) > 0:
                 log_path = self._config['log_path']
