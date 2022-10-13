@@ -549,7 +549,7 @@ class BorderBinariesFinder:
         """
         log.info(f"Candidates pickled in {pickle_file}")
 
-        pickle_dir = '/'.join(pickle_file.split('/')[:-1])
+        pickle_dir = pickle_file.parent
         if not os.path.exists(pickle_dir):
             os.makedirs(pickle_dir)
 
@@ -582,9 +582,9 @@ class BorderBinariesFinder:
         else:
             log.info("pickle file does not exist. Creating one now")
             if not pickle_file:
-                pickle_dir = DEFAULT_PICKLE_DIR
-                rel_pickle_name = self._fw_path.replace('/', '_').replace('.', '')
-                pickle_file = pickle_dir + '/' + rel_pickle_name + '.pk'
+                
+                rel_pickle_name = self._fw_path.with_suffix('.pk').name
+                pickle_file = DEFAULT_PICKLE_DIR / rel_pickle_name
 
             self._collect_stats(bins)
             self._apply_parsing_score()
@@ -594,4 +594,4 @@ class BorderBinariesFinder:
 
         self._end_time = time.time()
         log.info(f"The discovered border binaries are: {self._border_binaries}")
-        return self._border_binaries, pickle_file
+        return self._border_binaries, rel_pickle_name

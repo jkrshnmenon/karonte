@@ -1,3 +1,4 @@
+from pathlib import Path
 from random import randint
 
 from libraries.extractor.extractor import Extractor
@@ -5,9 +6,11 @@ from libraries.extractor.extractor import Extractor
 
 MAX_THREADS = 3
 N_TYPE_DATA_KEYS = 4
-DEFAULT_LOG_PATH = "/home/karonte/logs/Karonte.txt_" + str(randint(1, 100))
-DEFAULT_PICKLE_DIR = "/home/karonte/"
-FW_TMP_DIR = '/home/karonte/'
+CUR_PATH = Path(__file__).parent.parent
+DEFAULT_LOG_PATH = CUR_PATH / "logs" / ("Karonte.txt_" + str(randint(1, 100)))
+DEFAULT_PICKLE_DIR = CUR_PATH / "pickles/"
+EXTRACED_FW_DIR = CUR_PATH / 'test_cases/'
+PACKED_FW_DIR = CUR_PATH / 'firmwares/'
 
 
 def unpack_firmware(fw_path, out_dir):
