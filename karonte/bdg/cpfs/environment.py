@@ -175,7 +175,7 @@ class Environment(CPF):
                 self._log.debug(f"New data key: {str(data_key)}")
                 self._seen_strings.append(data_key)
                 dual_fun = Environment.case_sensitive_replace(name_fun, M_SET_KEYWORD, M_GET_KEYWORD)
-                cmd = "for file in `grep -r '" + data_key + "' " + self._fw_path + \
+                cmd = "for file in `grep -r '" + data_key + "' " + self._fw_path.as_posix() + \
                       " | grep Binary | awk '{print $3}'`; do grep " + dual_fun + \
                       " $file | grep Binary | awk '{print $3}'; done;"
                 o, e = run_command(cmd)
