@@ -102,10 +102,11 @@ class Karonte:
         bdg = BinaryDependencyGraph(self._config, self._border_bins, self._fw_path,
                                     init_data_keys=pf_str, cpfs=cpfs, logger_obj=log)
         bdg.run()
+        print(bdg.graph)
 
-        log.info("Discovering Binary Dependency Graph")
-        bf = BugFinder(self._config, bdg, analyze_parents, analyze_children, logger_obj=log)
-        bf.run(report_alert=self._klog.save_alert, report_stats=self._klog.save_stats if self._add_stats else None)
+        # log.info("Discovering Binary Dependency Graph")
+        # bf = BugFinder(self._config, bdg, analyze_parents, analyze_children, logger_obj=log)
+        # bf.run(report_alert=self._klog.save_alert, report_stats=self._klog.save_stats if self._add_stats else None)
 
         # log.info("Discovering Bugs")
         # bf = BugFinder(self._config, bdg, analyze_parents, analyze_children, logger_obj=log)
