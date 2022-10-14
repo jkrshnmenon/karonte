@@ -1,6 +1,6 @@
 {
   "stats": "False",
-  "fw_path": "_XR500-V2104imgextracted_squashfs-root",
+  "fw_path": "_XR500-V2104",
   "angr_explode_bins": [
     "openvpn",
     "wpa_supplicant",
@@ -14,5 +14,5 @@
     ""
   ],
   "only_string": "False",
-  "pickle_parser": "_XR500-V2104imgextracted_squashfs-root.pk"
+  "pickle_parser": "_XR500-V2104.pk"
 }
