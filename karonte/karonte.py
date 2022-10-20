@@ -85,7 +85,7 @@ class Karonte:
             log.info("Running BorderBinariesFinder")
             self._border_bins, pickle_file = bbf.run(pickle_file=self._pickle_parsers)
             log.info("Writing pickle file location to config file")
-            self._config['pickle_parser'] = pickle_file
+            self._config['pickle_parsers'] = pickle_file
             with open(self._config_path, "w") as f:
                 json.dump(self._config, f, indent=2)
             if not self._border_bins:
@@ -103,6 +103,7 @@ class Karonte:
                                     init_data_keys=pf_str, cpfs=cpfs, logger_obj=log)
         bdg.run()
         print(bdg.graph)
+        print(bdg.nodes)
 
         # log.info("Discovering Binary Dependency Graph")
         # bf = BugFinder(self._config, bdg, analyze_parents, analyze_children, logger_obj=log)

@@ -14,5 +14,5 @@
     ""
   ],
   "only_string": "False",
-  "pickle_parser": "_XR500-V2104.pk"
+  "pickle_parsers": "_XR500-V2104.pk"
 }
