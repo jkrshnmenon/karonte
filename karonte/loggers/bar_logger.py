@@ -5,6 +5,28 @@ import sys
 from datetime import datetime
 
 
+import logging
+import logging.config
+
+
+class AngrFilter(logging.Filter):
+    def filter(self, record):
+        return not record.name.startswith("angr")
+
+
+
+def silence_angr(logger):
+    logger.addFilter(AngrFilter())
+
+    # logging.config.dictConfig({
+    #     'version': 1,
+    #     'disable_existing_loggers': True,
+    # })
+
+    logging.getLogger("angr").disabled = True
+
+
+
 class LogLevel(Enum):
     DEBUG = 'DEBUG'
     INFO = 'INFO'
