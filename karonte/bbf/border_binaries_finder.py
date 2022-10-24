@@ -6,7 +6,6 @@ import os
 import pickle
 import struct
 import time
-from pathlib import Path
 from functools import partial
 from multiprocessing import Pool
 
