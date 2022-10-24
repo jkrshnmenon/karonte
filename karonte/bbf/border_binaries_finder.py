@@ -6,6 +6,7 @@ import os
 import pickle
 import struct
 import time
+from pathlib import Path
 from functools import partial
 from multiprocessing import Pool
 
@@ -14,7 +15,14 @@ import numpy as np
 from archinfo import Endness
 from sklearn.cluster import DBSCAN
 
-from loggers import bar_logger
+import logging.config
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+})
+logging.getLogger("angr").disabled = True
+
+
 from bbf.binary_finder import *
 from bbf.forward_backward_taint_tracker import ForwardBackWardTaintTracker
 from bbf.utils import *
@@ -25,12 +33,6 @@ from bdg.cpfs import LIB_KEYWORD
 
 # logging.basicConfig()
 from utils import MAX_THREADS, DEFAULT_PICKLE_DIR
-
-log = logging.getLogger("BorderBinariesFinder")
-log.setLevel("DEBUG")
-
-angr.loggers.disable_root_logger()
-angr.logging.disable(logging.ERROR)
 
 
 def get_string(p, mem_addr, extended=True):
@@ -88,8 +90,7 @@ class BorderBinariesFinder:
     Find parser binaries within a firmware sample
     """
 
-    def __init__(self, fw_path, bb_m=0.5, bbr_m=0.4, cmp_m=0.7, use_connection_mark=True, use_network_mark=True,
-                 logger_obj=None):
+    def __init__(self, fw_path, bb_m=0.5, bbr_m=0.4, cmp_m=0.7, use_connection_mark=True, use_network_mark=True):
         """
         Initialization function
 
@@ -99,13 +100,10 @@ class BorderBinariesFinder:
         :param cmp_m: multiplier for number of comparisons (leave to default value to optimal results)
         :param use_connection_mark: apply network metric (True gives more accurate results, but it might be slower)
         :param use_network_mark: apply network metric
-        :param logger_obj: logger object to... log
         """
 
-        global log
-
-        if logger_obj:
-            log = logger_obj
+        self.log = logging.getLogger(self.__class__.__name__)
+        self.log.setLevel(logging.DEBUG)
 
         self._bb = bb_m
         self._bbr = bbr_m
@@ -285,7 +283,7 @@ class BorderBinariesFinder:
         :param bins: binaries (leave to None to consider all the binaries within a firmware sample)
         :return: None
         """
-        log.info(f"Binary: {os.path.basename(b)}")
+        self.log.info(f"Binary: {os.path.basename(b)}")
         if bins and b not in bins:
             return
         network_data_reach_memcmp = False
@@ -300,7 +298,7 @@ class BorderBinariesFinder:
         # we will also skip libraries, since those are never the border binaries
         items = [(x, y) for x, y in p.loader.main_object.plt.items() if any(s_m in x for s_m in CMP_SUCCS)]
         if LIB_KEYWORD in b or not items:
-            log.debug(f"Skipped generation of CFG: {os.path.basename(b)}")
+            self.log.debug(f"Skipped generation of CFG: {os.path.basename(b)}")
             return
 
         try:
@@ -320,7 +318,7 @@ class BorderBinariesFinder:
             key = (b, f_addr)
 
             if use_connection_mark:
-                # log.info(f"{os.path.basename(str(b))}: Using network metric")
+                # self.log.info(f"{os.path.basename(str(b))}: Using network metric")
                 f_sources = {f_addr: []}
                 f_sinks = {f_addr: []}
 
@@ -505,7 +503,7 @@ class BorderBinariesFinder:
                         sources[pred.function_address] = []
                     sources[pred.function_address].append((pred.addr, tuple(regs)))
             except Exception as e:
-                log.error(f"BBF: Error encountered when discovering input registers: {e}")
+                self.log.error(f"BBF: Error encountered when discovering input registers: {e}")
 
         for k in sources:
             sources[k] = list(set(sources[k]))
@@ -547,7 +545,7 @@ class BorderBinariesFinder:
         Pickle this module results
         :param pickle_file: path to pickle file
         """
-        log.info(f"Candidates pickled in {pickle_file}")
+        self.log.info(f"Candidates pickled in {pickle_file}")
 
         pickle_dir = pickle_file.parent
         if not os.path.exists(pickle_dir):
@@ -577,12 +575,12 @@ class BorderBinariesFinder:
         self._start_time = time.time()
         if pickle_file and pickle_file.is_file():
             rel_pickle_name = pickle_file.name
-            log.info("Found pickle file %s" % pickle_file)
+            self.log.info("Found pickle file %s" % pickle_file)
             with open(pickle_file, 'rb') as fp:
                 self._candidates, self._stats, self._multiplier = pickle.load(fp)
             self._border_binaries = BorderBinariesFinder._get_first_cluster(self._candidates)
         else:
-            log.info("pickle file does not exist. Creating one now")
+            self.log.info("pickle file does not exist. Creating one now")
             if not pickle_file:
                 
                 rel_pickle_name = self._fw_path.with_suffix('.pk').name
@@ -591,9 +589,9 @@ class BorderBinariesFinder:
             self._collect_stats(bins)
             self._apply_parsing_score()
             self._border_binaries = BorderBinariesFinder._get_first_cluster(self._candidates)
-            log.info("Pickling stuff to %s" % pickle_file)
+            self.log.info("Pickling stuff to %s" % pickle_file)
             self._pickle_it(pickle_file)
 
         self._end_time = time.time()
-        log.info(f"The discovered border binaries are: {self._border_binaries}")
+        self.log.info(f"The discovered border binaries are: {self._border_binaries}")
         return self._border_binaries, rel_pickle_name

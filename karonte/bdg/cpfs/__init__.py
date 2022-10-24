@@ -9,11 +9,14 @@ from taint_analysis.utils import get_arguments_call_with_instruction_address, ar
 from angr.knowledge_plugins.key_definitions.constants import OP_AFTER
 from angr.knowledge_plugins.key_definitions.undefined import UNDEFINED
 
-log = logging.getLogger("BinaryDependencyGraph")
-log.setLevel("DEBUG")
-
 LIB_KEYWORD = 'lib'
 
+import logging.config
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+})
+logging.getLogger("angr").disabled = True
 
 class CPF:
     """
@@ -33,7 +36,6 @@ class CPF:
         :param kwargs: kwargs
         """
 
-        global log
         self._role_info = {}
         self._roles = []
         self._data_keys = []
@@ -41,7 +43,8 @@ class CPF:
         self._fw_path = fw_path
         self._cfg = cfg
         self._p = p
-        self._log = kwargs['log'] if 'log' in kwargs else log
+        self._log = logging.getLogger(self.__class__.__name__)
+        self._log.setLevel(logging.DEBUG)
         self._name = name
         self._memcmp_like = memcmp_like_functions if memcmp_like_functions is not None else []
         self._blob = True if not hasattr(self._p.loader.main_object, 'reverse_plt') else False

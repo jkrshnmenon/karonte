@@ -1,4 +1,5 @@
 import os
+import logging
 
 from bdg.cpfs.__init__ import CPF, LIB_KEYWORD
 from taint_analysis.utils import arg_reg_name, arg_reg_id, get_initial_state
@@ -42,6 +43,8 @@ class File(CPF):
 
     def __init__(self, *kargs, **kwargs):
         CPF.__init__(self, 'file', *kargs, **kwargs)
+        self._log = logging.getLogger(self.__class__.__name__)
+        self._log.setLevel(logging.DEBUG)
         self._opens = []
         self._ct = None
         self._current_key_addr = None

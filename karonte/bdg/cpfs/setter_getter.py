@@ -4,6 +4,7 @@ from bdg.cpfs.__init__ import CPF, LIB_KEYWORD
 
 import angr
 import itertools
+import logging
 
 from taint_analysis.utils import arg_reg_id
 from bdg.utils import are_parameters_in_registers, run_command, get_addrs_string
@@ -16,6 +17,14 @@ M_SET_KEYWORD = ('set', 'insert', 'add', 'nvram_set')
 M_GET_KEYWORD = ('get', 'read', 'nvram_get')
 
 
+import logging.config
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+})
+logging.getLogger("angr").disabled = True
+
+
 class SetterGetter(CPF):
     """
     This CPF is an extension of the semantic CPF to speed up analysis.
@@ -25,6 +34,8 @@ class SetterGetter(CPF):
 
     def __init__(self, *kargs, **kwargs):
         CPF.__init__(self, 'setter_getter', *kargs, **kwargs)
+        self._log = logging.getLogger(self.__class__.__name__)
+        self._log.setLevel(logging.DEBUG)
         self._normalized_cfg = None
         self._already_discovered = False
 

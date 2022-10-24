@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from typing import Callable
+import traceback
 
 import angr
 
@@ -16,12 +17,14 @@ from taint_analysis.coretaint import TimeOutException, CoreTaint
 from taint_analysis.utils import get_arity, arg_reg_name, arg_reg_names, get_arguments_call_with_instruction_address, \
     get_initial_state
 
-angr.loggers.disable_root_logger()
-angr.logging.disable(logging.ERROR)
 
-logging.basicConfig()
-log = logging.getLogger("BinaryDependencyGraph")
-log.setLevel("DEBUG")
+import logging.config
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+})
+logging.getLogger("angr").disabled = True
+
 
 
 class BdgNode:
@@ -36,6 +39,9 @@ class BdgNode:
         :param is_orphan: flag representing whether this node is an orphan (i.e. could not find its parents) node or not
         :param is_leaf: flag representing whether this node is a leaf node or not
         """
+
+        self.log = logging.getLogger(self.__class__.__name__)
+        self.log.setLevel(logging.DEBUG)
 
         self._p = project
         self._bin = project.loader.main_object.binary
@@ -67,7 +73,7 @@ class BdgNode:
         return not (self._bin == o.bin)
 
     def __getstate__(self):
-        log.warning("You should never pickle a BDG Node, you will lose some info")
+        self.log.warning("You should never pickle a BDG Node, you will lose some info")
         return self._p, self._bin, self.role_info, self._root, self._generator_keys
 
     def __setstate__(self, info):
@@ -255,7 +261,7 @@ class BinaryDependencyGraph:
         BDG algorithm: Automatically infers the data flow across binaries of a firmware sample.
     """
 
-    def __init__(self, config, seed_bins, fw_path, init_data_keys=None, cpfs=(), logger_obj=None):
+    def __init__(self, config, seed_bins, fw_path, init_data_keys=None, cpfs=()):
         """
         Initialization routine
 
@@ -264,13 +270,10 @@ class BinaryDependencyGraph:
         :param fw_path: unpacked firmware path
         :param init_data_keys: list of initial data keys to look for within the seed binaries
         :param cpfs: set of cpfs used to infer the role of a binary
-        :param logger_obj: logger object
         """
 
-        global log
-
-        if logger_obj:
-            log = logger_obj
+        self.log = logging.getLogger(self.__class__.__name__)
+        self.log.setLevel(logging.DEBUG)
 
         self._arch = str(config['arch']) if 'arch' in config else None
         self._base_addr = int(config['base_addr'], 16) if 'base_addr' in config else None
@@ -331,7 +334,7 @@ class BinaryDependencyGraph:
         return False
 
     def __getstate__(self):
-        log.warning("You should never pickle a BDG graph, you will lose some info")
+        self.log.warning("You should never pickle a BDG graph, you will lose some info")
         return (self._seed_bins,
                 self._graph,
                 self._data_keys,
@@ -371,7 +374,7 @@ class BinaryDependencyGraph:
                     # we got a blob?
                     if self._arch and self._base_addr:
                         blob = True
-                        log.info("We got a blob")
+                        self.log.info("We got a blob")
                         load_options = {
                             'main_opts': {
                                 'custom_arch': self._arch,
@@ -384,7 +387,7 @@ class BinaryDependencyGraph:
                         blob = False
                         self._projects[b] = angr.Project(b, auto_load_libs=False)
 
-                    log.info(f"Building {bin_name} CFG (this may take some time)")
+                    self.log.info(f"Building {bin_name} CFG (this may take some time)")
                     self._cfgs[b] = self._projects[b].analyses.CFG(collect_data_references=True,
                                                                    extra_cross_references=True)
                     memcplike = find_memcmp_like(self._projects[b], self._cfgs[b]) if blob else []
@@ -392,11 +395,12 @@ class BinaryDependencyGraph:
                     self._cpfs[b] = []
                     for cpf in self._enabled_cpfs:
                         c = cpf(self._projects[b], self._cfgs[b], self._fw_path,
-                                memcmp_like_functions=memcplike, log=log)
+                                memcmp_like_functions=memcplike)
                         self._cpfs[b].append(c)
                     added_bins.append(b)
                 except Exception as e:
-                    log.warning(f"Failed to add {b}")
+                    self.log.warning(f"Got exception : {str(e)}")
+                    self.log.warning(f"Failed to add {b}")
                     self._ignore_bins.append(bin_name)
         return added_bins
 
@@ -420,13 +424,13 @@ class BinaryDependencyGraph:
         current_bin = self._current_bin
 
         for pl in self._cpfs[current_bin]:
-            # log.debug(f"Entering cpf {pl.name}")
+            # self.log.debug(f"Entering cpf {pl.name}")
             try:
                 found, role = pl.run(self._current_data_key, self._current_key_addr, self._current_par_name,
                                      self._core_taint, current_path, self._f_arg_vals)
 
                 if found:
-                    log.debug(f"Using cpf {pl.name} with role {role}")
+                    self.log.debug(f"Using cpf {pl.name} with role {role}")
 
                     self._current_role = role
                     self._cpf_used = pl
@@ -434,7 +438,9 @@ class BinaryDependencyGraph:
                         self._core_taint.stop_run()
                         break
             except Exception as e:
-                log.warning(f"Exception CPF {pl.name}: {e}")
+                self.log.warning(f"Exception CPF {pl.name}: {e}")
+                tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+                self.log.warning("".join(tb_str))
                 pass
 
     def _apply_taint(self, state, key_addr, keyword=None):
@@ -484,8 +490,7 @@ class BinaryDependencyGraph:
         self._core_taint = CoreTaint(p, interfunction_level=2, smart_call=False,
                                      follow_unsat=True,
                                      try_thumb=True,
-                                     exit_on_decode_error=True, force_paths=True, allow_untaint=False,
-                                     logger_obj=log)
+                                     exit_on_decode_error=True, force_paths=True, allow_untaint=False)
 
         # the used register is not a parameter register
         if are_parameters_in_registers(p) and reg_name not in arg_reg_names(p):
@@ -513,9 +518,9 @@ class BinaryDependencyGraph:
             self._core_taint.run(s, (), (), summarized_f=summarized_f, force_thumb=False,
                                  check_func=self._check_key_usage, init_bss=False)
         except TimeOutException:
-            log.warning("Timeout Triggered")
+            self.log.warning("Timeout Triggered")
         except Exception as e:
-            log.warning(f"Exception in Coretaint: {str(e)}")
+            self.log.warning(f"Exception in Coretaint: {str(e)}")
 
         self._core_taint.unset_alarm()
         return self._current_role
@@ -555,8 +560,7 @@ class BinaryDependencyGraph:
         self._core_taint = CoreTaint(p, interfunction_level=0, smart_call=False,
                                      follow_unsat=True,
                                      try_thumb=True,
-                                     exit_on_decode_error=True, force_paths=True, allow_untaint=False,
-                                     logger_obj=log)
+                                     exit_on_decode_error=True, force_paths=True, allow_untaint=False)
 
         self._current_key_addr = key_addr
         s = get_initial_state(p, self._core_taint, f_addr)
@@ -569,9 +573,9 @@ class BinaryDependencyGraph:
             self._core_taint.run(s, (), (), summarized_f=summarized_f, force_thumb=False,
                                  check_func=self._find_taint_callers, init_bss=False)
         except TimeOutException:
-            log.warning("Timeout Triggered")
+            self.log.warning("Timeout Triggered")
         except Exception as e:
-            log.warning(f"Exception in Coretaint: {str(e)}")
+            self.log.warning(f"Exception in Coretaint: {str(e)}")
 
         self._core_taint.unset_alarm()
         callsites = []
@@ -629,12 +633,12 @@ class BinaryDependencyGraph:
                 reg_used = get_reg_used(self._current_p, inst_addr)
                 if not reg_used:
                     continue
-                log.info(f"Key {keyword} is used in a function call. Checking now!")
+                self.log.info(f"Key {keyword} is used in a function call. Checking now!")
                 ret = found(cfg.model.get_any_node(block_addr), key_addr, reg_used, keyword)
                 if ret:
                     info_collected[key_addr].append(ret)
             else:
-                log.error("_find_ref_http_strings: arch doesn t use registers to set "
+                self.log.error("_find_ref_http_strings: arch doesn t use registers to set "
                           "function parameters. Implement me!")
                 continue
 
@@ -762,7 +766,7 @@ class BinaryDependencyGraph:
                             break
                     for s in strs:
                         if s.startswith(h_key):
-                            log.info(f"Checking data key: {s}")
+                            self.log.info(f"Checking data key: {s}")
                             i_roles, cpf_used = self._find_role(s=s)
                             # did we find any role?
                             if any([r for r in i_roles if r != Role.UNKNOWN]):

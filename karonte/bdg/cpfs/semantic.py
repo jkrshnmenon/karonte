@@ -1,6 +1,6 @@
+import logging
 from bdg.cpfs.__init__ import CPF
 
-import angr
 import itertools
 
 from taint_analysis.utils import get_arity, arg_reg_name, arg_reg_id, arg_reg_off
@@ -17,6 +17,8 @@ class Semantic(CPF):
 
     def __init__(self, *kargs, **kwargs):
         CPF.__init__(self, 'semantic', *kargs, **kwargs)
+        self._log = logging.getLogger(self.__class__.__name__)
+        self._log.setLevel(logging.DEBUG)
         self._normalized_cfg = None
         self._tainted_calls = []
         self._already_discovered = False
@@ -141,7 +143,7 @@ class Semantic(CPF):
                             except:
                                 pos_call = 0
 
-                            assert pos_call > 0, 'semantic.run: unable to find the calling block'
+                            assert pos_call > 0, 'semantic.run: unable to find the calling block in _indirect_access_search'
 
                             caller_block = history_bbs[pos_call - 1]
 
@@ -300,7 +302,7 @@ class Semantic(CPF):
                     except:
                         pos_call = 0
 
-                    assert pos_call > 0, 'semantic.run: unable to find the calling block'
+                    assert pos_call > 0, 'semantic.run: unable to find the calling block in _direct_access_search'
 
                     caller_block = addrs[pos_call - 1]
                     no = self._cfg.model.get_any_node(caller_block)
@@ -437,7 +439,7 @@ class Semantic(CPF):
                     except:
                         pos_call = 0
 
-                    assert pos_call > 0, 'semantic.run: unable to find the calling block'
+                    assert pos_call > 0, 'semantic.run: unable to find the calling block in _glbl_data_key_setter'
 
                     caller_block = addrs[pos_call - 1]
                     cno = self._cfg.model.get_any_node(caller_block)

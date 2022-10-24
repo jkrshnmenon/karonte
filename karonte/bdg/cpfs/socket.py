@@ -1,6 +1,7 @@
 import math
 import os
 import struct
+import logging
 
 from angr.procedures.stubs.ReturnUnconstrained import ReturnUnconstrained
 from claripy import BVV
@@ -70,6 +71,8 @@ class Socket(CPF):
 
     def __init__(self, *kargs, **kwargs):
         CPF.__init__(self, 'socket', *kargs, **kwargs)
+        self._log = logging.getLogger(self.__class__.__name__)
+        self._log.setLevel(logging.DEBUG)
         self._ips = []
         self._current_key_addr = None
         self._stop_run = False

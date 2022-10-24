@@ -1,4 +1,5 @@
 import os
+import logging
 
 from bdg.cpfs.__init__ import CPF, LIB_KEYWORD
 
@@ -15,6 +16,14 @@ M_SET_KEYWORD = 'setenv'
 M_GET_KEYWORD = 'getenv'
 
 
+import logging.config
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+})
+logging.getLogger("angr").disabled = True
+
+
 class Environment(CPF):
     """
     Implementation of the environment CPF
@@ -22,6 +31,8 @@ class Environment(CPF):
 
     def __init__(self, *kargs, **kwargs):
         CPF.__init__(self, 'environment', *kargs, **kwargs)
+        self._log = logging.getLogger(self.__class__.__name__)
+        self._log.setLevel(logging.DEBUG)
         self._normalized_cfg = None
         self._already_discovered = False
 

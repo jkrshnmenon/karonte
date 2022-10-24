@@ -2,8 +2,6 @@ import logging
 import os
 import time
 
-import angr
-from claripy import pickle
 
 from bbf.utils import NETWORK_KEYWORDS
 from loggers import bar_logger
@@ -17,11 +15,11 @@ from taint_analysis.coretaint import TimeOutException, CoreTaint
 from taint_analysis.utils import arg_reg_id, get_initial_state, arg_reg_name, \
     get_arguments_call_with_instruction_address, arg_reg_names, get_arity
 
-angr.loggers.disable_root_logger()
-angr.logging.disable(logging.ERROR)
-
-log = logging.getLogger("BugFinder")
-log.setLevel("DEBUG")
+# angr.loggers.disable_root_logger()
+# angr.logging.disable(logging.ERROR)
+# 
+# log = logging.getLogger("BugFinder")
+# log.setLevel("DEBUG")
 
 
 class BugFinder:
