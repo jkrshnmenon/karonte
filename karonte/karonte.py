@@ -5,13 +5,13 @@ import angr
 import logging
 from pathlib import Path
 
-import logging.config
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': True,
-})
-
-logging.getLogger("angr").disabled = True
+# import logging.config
+# logging.config.dictConfig({
+#     'version': 1,
+#     'disable_existing_loggers': True,
+# })
+# 
+# logging.getLogger("angr").disabled = True
 
 from bf.bug_finder import BugFinder
 from bbf.border_binaries_finder import BorderBinariesFinder
@@ -19,6 +19,7 @@ from bdg.binary_dependency_graph import BinaryDependencyGraph
 from bdg.cpfs import environment, semantic, file, socket, setter_getter
 
 from loggers.file_logger import FileLogger
+from loggers.bar_logger import silence_angr
 # from loggers.bar_logger import BarLogger
 from utils import *
 
@@ -28,6 +29,7 @@ class Karonte:
     def __init__(self, config_path, log_path=None):
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.setLevel(logging.DEBUG)
+        silence_angr(self.log)
 
         self._config_path = config_path
         
