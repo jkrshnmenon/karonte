@@ -13,12 +13,14 @@ _ordered_argument_regs_names = {
     'ARMEL': ['r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10', 'r11', 'r12'],
     'AARCH64': ['x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7'],
     'MIPS32': ['a0', 'a1', 'a2', 'a3'],
+    'AMD64': ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9'],
 }
 
 _archinfo_by_string = {
     'ARMEL': archinfo.ArchARMEL,
     'AARCH64': archinfo.ArchAArch64,
     'MIPS32': archinfo.ArchMIPS32,
+    'AMD64': archinfo.ArchAMD64
 }
 
 
@@ -95,7 +97,15 @@ def get_arguments_call_with_instruction_address(p, b_addr):
     set_params = []
     b = p.factory.block(b_addr)
     for reg_name in arg_reg_names(p):
-        put_stmts = [s for s in b.vex.statements if s.tag == 'Ist_Put' and p.arch.register_names[s.offset] == reg_name]
+        put_stmts = []
+        for s in b.vex.statements:
+            if s.tag != 'Ist_Put':
+                continue
+            if s.offset not in p.arch.register_names:
+                continue
+            if p.arch.register_names[s.offset] != reg_name:
+                continue
+            put_stmts.append(s)
         if not put_stmts:
             break
 
