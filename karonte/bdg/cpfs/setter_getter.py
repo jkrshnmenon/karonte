@@ -227,7 +227,7 @@ class SetterGetter(CPF):
                 self._seen_strings.append(data_key)
                 candidate_bins = []
                 for get_f in M_GET_KEYWORD:
-                    cmd = "for file in `grep -r '" + data_key + "' " + self._fw_path + \
+                    cmd = "for file in `grep -r '" + data_key + "' " + self._fw_path.as_posix() + \
                           " | grep Binary | awk '{print $3}'`; do grep " + get_f + \
                           " $file | grep Binary | awk '{print $3}'; done;"
                     o, e = run_command(cmd)
