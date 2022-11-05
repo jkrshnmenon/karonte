@@ -282,7 +282,9 @@ class BorderBinariesFinder:
         :param bins: binaries (leave to None to consider all the binaries within a firmware sample)
         :return: None
         """
-        self.log.info(f"Binary: {os.path.basename(b)}")
+        log = logging.getLogger("collect_stats_bin_thread")
+        log.setLevel(logging.DEBUG)
+        log.info(f"Binary: {os.path.basename(b)}")
         if bins and b not in bins:
             return
         network_data_reach_memcmp = False
@@ -297,7 +299,7 @@ class BorderBinariesFinder:
         # we will also skip libraries, since those are never the border binaries
         items = [(x, y) for x, y in p.loader.main_object.plt.items() if any(s_m in x for s_m in CMP_SUCCS)]
         if LIB_KEYWORD in b or not items:
-            self.log.debug(f"Skipped generation of CFG: {os.path.basename(b)}")
+            log.debug(f"Skipped generation of CFG: {os.path.basename(b)}")
             return
 
         try:
@@ -464,6 +466,8 @@ class BorderBinariesFinder:
         :return: addresses of taintable basic blocks and the registers that are used
         as inputs
         """
+        log = logging.getLogger("find_sources_of_taint")
+        log.setLevel(logging.DEBUG)
         # methods to discover that are sources of taint
         source_methods = ['read, recv']
         # source_methods = ['scanf']
@@ -502,7 +506,7 @@ class BorderBinariesFinder:
                         sources[pred.function_address] = []
                     sources[pred.function_address].append((pred.addr, tuple(regs)))
             except Exception as e:
-                self.log.error(f"BBF: Error encountered when discovering input registers: {e}")
+                log.error(f"BBF: Error encountered when discovering input registers: {e}")
 
         for k in sources:
             sources[k] = list(set(sources[k]))
